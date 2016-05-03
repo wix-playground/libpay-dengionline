@@ -4,8 +4,10 @@ import java.util.{List => JList}
 
 import com.google.api.client.http.UrlEncodedParser
 import com.wix.hoopoe.http.testkit.EmbeddedHttpProbe
-import com.wix.pay.dengionline.ResponseParser
+import com.wix.pay.creditcard.CreditCard
 import com.wix.pay.dengionline.model.Response
+import com.wix.pay.dengionline.{DengionlineHelper, ResponseParser}
+import com.wix.pay.model.{CurrencyAmount, Customer, Deal}
 import spray.http._
 
 import scala.collection.JavaConversions._
@@ -25,6 +27,70 @@ class DengionlineDriver(port: Int) {
 
   def resetProbe() {
     probe.handlers.clear()
+  }
+
+  def aSaleFor(siteId: String,
+               salt: String,
+               card: CreditCard,
+               currencyAmount: CurrencyAmount,
+               deal: Deal,
+               customer: Customer): RequestCtx = {
+    val request = DengionlineHelper.createPurchaseRequest(
+      siteId = siteId,
+      salt = salt,
+      currencyAmount = currencyAmount,
+      card = card,
+      dealId = deal.id,
+      customerIpAddress = customer.ipAddress,
+      customerEmail = customer.email
+    )
+
+    new RequestCtx(request)
+  }
+
+  def anAuthorizeFor(siteId: String,
+                     salt: String,
+                     card: CreditCard,
+                     currencyAmount: CurrencyAmount,
+                     deal: Deal,
+                     customer: Customer): RequestCtx = {
+    val request = DengionlineHelper.createAuthorizationRequest(
+      siteId = siteId,
+      salt = salt,
+      currencyAmount = currencyAmount,
+      card = card,
+      dealId = deal.id,
+      customerIpAddress = customer.ipAddress,
+      customerEmail = customer.email
+    )
+
+    new RequestCtx(request)
+  }
+
+  def aCaptureFor(siteId: String,
+                  salt: String,
+                  amount: Double,
+                  transactionId: String): RequestCtx = {
+    val request = DengionlineHelper.createConfirmationRequest(
+      siteId = siteId,
+      salt = salt,
+      amount = amount,
+      transactionId = transactionId
+    )
+
+    new RequestCtx(request)
+  }
+
+  def aVoidAuthorizationFor(siteId: String,
+                            salt: String,
+                            transactionId: String): RequestCtx = {
+    val request = DengionlineHelper.createVoidRequest(
+      siteId = siteId,
+      salt = salt,
+      transactionId = transactionId
+    )
+
+    new RequestCtx(request)
   }
 
   def aRequestFor(params: Map[String, String]): RequestCtx = {

@@ -33,7 +33,8 @@ class DengionlineGateway(requestFactory: HttpRequestFactory,
       val merchant = merchantParser.parse(merchantKey)
 
       val request = DengionlineHelper.createAuthorizationRequest(
-        merchant = merchant,
+        siteId = merchant.siteId,
+        salt = merchant.salt,
         currencyAmount = currencyAmount,
         card = creditCard,
         dealId = deal.get.id,
@@ -59,9 +60,10 @@ class DengionlineGateway(requestFactory: HttpRequestFactory,
       val authorization = authorizationParser.parse(authorizationKey)
 
       val request = DengionlineHelper.createConfirmationRequest(
-        merchant = merchant,
+        siteId = merchant.siteId,
+        salt = merchant.salt,
         amount = amount,
-        authorization = authorization
+        transactionId = authorization.transactionId
       )
       val responseJson = doRequest(request)
       val response = responseParser.parse(responseJson)
@@ -83,7 +85,8 @@ class DengionlineGateway(requestFactory: HttpRequestFactory,
       val merchant = merchantParser.parse(merchantKey)
 
       val request = DengionlineHelper.createPurchaseRequest(
-        merchant = merchant,
+        siteId = merchant.siteId,
+        salt = merchant.salt,
         currencyAmount = currencyAmount,
         card = creditCard,
         dealId = deal.get.id,
@@ -107,8 +110,9 @@ class DengionlineGateway(requestFactory: HttpRequestFactory,
       val authorization = authorizationParser.parse(authorizationKey)
 
       val request = DengionlineHelper.createVoidRequest(
-        merchant = merchant,
-        authorization = authorization
+        siteId = merchant.siteId,
+        salt = merchant.salt,
+        transactionId = authorization.transactionId
       )
       val responseJson = doRequest(request)
       val response = responseParser.parse(responseJson)

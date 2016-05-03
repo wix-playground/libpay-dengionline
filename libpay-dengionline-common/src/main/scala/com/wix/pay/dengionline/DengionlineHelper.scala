@@ -7,7 +7,8 @@ import com.wix.pay.dengionline.model.{Actions, Fields}
 import com.wix.pay.model.CurrencyAmount
 
 object DengionlineHelper {
-  def createPurchaseRequest(merchant: DengionlineMerchant,
+  def createPurchaseRequest(siteId: String,
+                            salt: String,
                             currencyAmount: CurrencyAmount,
                             card: CreditCard,
                             dealId: String,
@@ -15,7 +16,8 @@ object DengionlineHelper {
                             customerEmail: Option[String] = None): Map[String, String] = {
     createAuthorizationOrPurchaseRequest(
       action = Actions.purchase,
-      merchant = merchant,
+      siteId = siteId,
+      salt = salt,
       currencyAmount = currencyAmount,
       card = card,
       dealId = dealId,
@@ -24,7 +26,8 @@ object DengionlineHelper {
     )
   }
 
-  def createAuthorizationRequest(merchant: DengionlineMerchant,
+  def createAuthorizationRequest(siteId: String,
+                                 salt: String,
                                  currencyAmount: CurrencyAmount,
                                  card: CreditCard,
                                  dealId: String,
@@ -32,7 +35,8 @@ object DengionlineHelper {
                                  customerEmail: Option[String] = None): Map[String, String] = {
     createAuthorizationOrPurchaseRequest(
       action = Actions.authorization,
-      merchant = merchant,
+      siteId = siteId,
+      salt = salt,
       currencyAmount = currencyAmount,
       card = card,
       dealId = dealId,
@@ -41,34 +45,37 @@ object DengionlineHelper {
     )
   }
 
-  def createConfirmationRequest(merchant: DengionlineMerchant,
+  def createConfirmationRequest(siteId: String,
+                                salt: String,
                                 amount: Double,
-                                authorization: DengionlineAuthorization): Map[String, String] = {
+                                transactionId: String): Map[String, String] = {
     val params = Map(
       Fields.action -> Actions.confirmation,
-      Fields.siteId -> merchant.siteId,
-      Fields.transactionId -> authorization.transactionId,
+      Fields.siteId -> siteId,
+      Fields.transactionId -> transactionId,
       Fields.amount -> toDengionlineAmount(amount)
     )
 
-    val signature = Signer.calculateSignature(params, merchant.salt)
+    val signature = Signer.calculateSignature(params, salt)
     params + (Fields.signature -> signature)
   }
 
-  def createVoidRequest(merchant: DengionlineMerchant,
-                        authorization: DengionlineAuthorization): Map[String, String] = {
+  def createVoidRequest(siteId: String,
+                        salt: String,
+                        transactionId: String): Map[String, String] = {
     val params = Map(
       Fields.action -> Actions.void,
-      Fields.siteId -> merchant.siteId,
-      Fields.transactionId -> authorization.transactionId
+      Fields.siteId -> siteId,
+      Fields.transactionId -> transactionId
     )
 
-    val signature = Signer.calculateSignature(params, merchant.salt)
+    val signature = Signer.calculateSignature(params, salt)
     params + (Fields.signature -> signature)
   }
 
   private def createAuthorizationOrPurchaseRequest(action: String,
-                                                   merchant: DengionlineMerchant,
+                                                   siteId: String,
+                                                   salt: String,
                                                    currencyAmount: CurrencyAmount,
                                                    card: CreditCard,
                                                    dealId: String,
@@ -76,7 +83,7 @@ object DengionlineHelper {
                                                    customerEmail: Option[String] = None): Map[String, String] = {
     val params = Map(
       Fields.action -> action,
-      Fields.siteId -> merchant.siteId,
+      Fields.siteId -> siteId,
       Fields.amount -> toDengionlineAmount(currencyAmount.amount),
       Fields.currency -> currencyAmount.currency,
       Fields.externalId -> dealId,
@@ -91,7 +98,7 @@ object DengionlineHelper {
       Fields.billingAddress -> card.billingAddress.getOrElse("")
     )
 
-    val signature = Signer.calculateSignature(params, merchant.salt)
+    val signature = Signer.calculateSignature(params, salt)
     params + (Fields.signature -> signature)
   }
 

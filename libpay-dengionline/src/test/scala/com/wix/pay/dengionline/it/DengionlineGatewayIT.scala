@@ -54,28 +54,6 @@ class DengionlineGatewayIT extends SpecWithJUnit {
       ipAddress = Some("2.2.2.2")
     )
 
-    def aPurchaseRequest = {
-      DengionlineHelper.createPurchaseRequest(
-        merchant = someMerchant,
-        currencyAmount = someCurrencyAmount,
-        card = someCreditCard,
-        dealId = someDeal.id,
-        customerIpAddress = someCustomer.ipAddress,
-        customerEmail = someCustomer.email
-      )
-    }
-
-    def anAuthorizationRequest = {
-      DengionlineHelper.createAuthorizationRequest(
-        merchant = someMerchant,
-        currencyAmount = someCurrencyAmount,
-        card = someCreditCard,
-        dealId = someDeal.id,
-        customerIpAddress = someCustomer.ipAddress,
-        customerEmail = someCustomer.email
-      )
-    }
-
     def aForbiddenResponse = Response(
       code = Errors.forbidden.code,
       message = Errors.forbidden.message
@@ -106,21 +84,6 @@ class DengionlineGatewayIT extends SpecWithJUnit {
       transaction_id = Some(someAuthorization.transactionId)
     )
 
-    def aConfirmationRequest = {
-      DengionlineHelper.createConfirmationRequest(
-        merchant = someMerchant,
-        amount = someCaptureAmount,
-        authorization = someAuthorization
-      )
-    }
-
-    def aVoidRequest = {
-      DengionlineHelper.createVoidRequest(
-        merchant = someMerchant,
-        authorization = someAuthorization
-      )
-    }
-
     val dengionline: PaymentGateway = new DengionlineGateway(
       requestFactory = requestFactory,
       endpointUrl = s"http://localhost:$dengionlinePort/",
@@ -133,7 +96,14 @@ class DengionlineGatewayIT extends SpecWithJUnit {
 
   "sale request via DengiOnline gateway" should {
     "gracefully fail on invalid merchant key" in new Ctx {
-      driver.aRequestFor(aPurchaseRequest) returns aForbiddenResponse
+      driver.aSaleFor(
+        siteId = someMerchant.siteId,
+        salt = someMerchant.salt,
+        card = someCreditCard,
+        currencyAmount = someCurrencyAmount,
+        deal = someDeal,
+        customer = someCustomer
+      ) returns aForbiddenResponse
 
       dengionline.sale(
         merchantKey = merchantKey,
@@ -147,7 +117,14 @@ class DengionlineGatewayIT extends SpecWithJUnit {
     }
 
     "successfully yield a transaction ID on valid request" in new Ctx {
-      driver.aRequestFor(aPurchaseRequest) returns aSuccessfulResponse
+      driver.aSaleFor(
+        siteId = someMerchant.siteId,
+        salt = someMerchant.salt,
+        card = someCreditCard,
+        currencyAmount = someCurrencyAmount,
+        deal = someDeal,
+        customer = someCustomer
+      ) returns aSuccessfulResponse
 
       dengionline.sale(
         merchantKey = merchantKey,
@@ -161,7 +138,14 @@ class DengionlineGatewayIT extends SpecWithJUnit {
     }
 
     "gracefully fail on rejected card" in new Ctx {
-      driver.aRequestFor(aPurchaseRequest) returns aDeclinedResponse
+      driver.aSaleFor(
+        siteId = someMerchant.siteId,
+        salt = someMerchant.salt,
+        card = someCreditCard,
+        currencyAmount = someCurrencyAmount,
+        deal = someDeal,
+        customer = someCustomer
+      ) returns aDeclinedResponse
 
       dengionline.sale(
         merchantKey = merchantKey,
@@ -175,7 +159,14 @@ class DengionlineGatewayIT extends SpecWithJUnit {
     }
 
     "gracefully fail when 3DS is required" in new Ctx {
-      driver.aRequestFor(aPurchaseRequest) returns a3dsRequiredResponse
+      driver.aSaleFor(
+        siteId = someMerchant.siteId,
+        salt = someMerchant.salt,
+        card = someCreditCard,
+        currencyAmount = someCurrencyAmount,
+        deal = someDeal,
+        customer = someCustomer
+      ) returns a3dsRequiredResponse
 
       dengionline.sale(
         merchantKey = merchantKey,
@@ -191,7 +182,14 @@ class DengionlineGatewayIT extends SpecWithJUnit {
 
   "authorize request via DengiOnline gateway" should {
     "gracefully fail on invalid merchant key" in new Ctx {
-      driver.aRequestFor(anAuthorizationRequest) returns aForbiddenResponse
+      driver.anAuthorizeFor(
+        siteId = someMerchant.siteId,
+        salt = someMerchant.salt,
+        card = someCreditCard,
+        currencyAmount = someCurrencyAmount,
+        deal = someDeal,
+        customer = someCustomer
+      ) returns aForbiddenResponse
 
       dengionline.authorize(
         merchantKey = merchantKey,
@@ -205,7 +203,14 @@ class DengionlineGatewayIT extends SpecWithJUnit {
     }
 
     "successfully yield an authorization key on valid request" in new Ctx {
-      driver.aRequestFor(anAuthorizationRequest) returns aSuccessfulResponse
+      driver.anAuthorizeFor(
+        siteId = someMerchant.siteId,
+        salt = someMerchant.salt,
+        card = someCreditCard,
+        currencyAmount = someCurrencyAmount,
+        deal = someDeal,
+        customer = someCustomer
+      ) returns aSuccessfulResponse
 
       dengionline.authorize(
         merchantKey = merchantKey,
@@ -223,7 +228,14 @@ class DengionlineGatewayIT extends SpecWithJUnit {
     }
 
     "gracefully fail on rejected card" in new Ctx {
-      driver.aRequestFor(anAuthorizationRequest) returns aDeclinedResponse
+      driver.anAuthorizeFor(
+        siteId = someMerchant.siteId,
+        salt = someMerchant.salt,
+        card = someCreditCard,
+        currencyAmount = someCurrencyAmount,
+        deal = someDeal,
+        customer = someCustomer
+      ) returns aDeclinedResponse
 
       dengionline.authorize(
         merchantKey = merchantKey,
@@ -237,7 +249,14 @@ class DengionlineGatewayIT extends SpecWithJUnit {
     }
 
     "gracefully fail when 3DS is required" in new Ctx {
-      driver.aRequestFor(anAuthorizationRequest) returns a3dsRequiredResponse
+      driver.anAuthorizeFor(
+        siteId = someMerchant.siteId,
+        salt = someMerchant.salt,
+        card = someCreditCard,
+        currencyAmount = someCurrencyAmount,
+        deal = someDeal,
+        customer = someCustomer
+      ) returns a3dsRequiredResponse
 
       dengionline.authorize(
         merchantKey = merchantKey,
@@ -253,7 +272,12 @@ class DengionlineGatewayIT extends SpecWithJUnit {
 
   "capture request via DengiOnline gateway" should {
     "successfully yield a transaction ID on valid request" in new Ctx {
-      driver.aRequestFor(aConfirmationRequest) returns aSuccessfulResponse
+      driver.aCaptureFor(
+        siteId = someMerchant.siteId,
+        salt = someMerchant.salt,
+        amount = someCaptureAmount,
+        transactionId = someAuthorization.transactionId
+      ) returns aSuccessfulResponse
 
       dengionline.capture(
         merchantKey = merchantKey,
@@ -267,7 +291,11 @@ class DengionlineGatewayIT extends SpecWithJUnit {
 
   "voidAuthorization request via DengiOnline gateway" should {
     "successfully yield a transaction ID on valid request" in new Ctx {
-      driver.aRequestFor(aVoidRequest) returns aSuccessfulResponse
+      driver.aVoidAuthorizationFor(
+        siteId = someMerchant.siteId,
+        salt = someMerchant.salt,
+        transactionId = someAuthorization.transactionId
+      ) returns aSuccessfulResponse
 
       dengionline.voidAuthorization(
         merchantKey = merchantKey,
