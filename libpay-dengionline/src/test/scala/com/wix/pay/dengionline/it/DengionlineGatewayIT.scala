@@ -4,7 +4,7 @@ import com.google.api.client.http.javanet.NetHttpTransport
 import com.wix.pay.creditcard.{CreditCard, CreditCardOptionalFields, YearMonth}
 import com.wix.pay.dengionline.DengionlineMatchers._
 import com.wix.pay.dengionline._
-import com.wix.pay.dengionline.model.{Errors, Response}
+import com.wix.pay.dengionline.model.Errors
 import com.wix.pay.dengionline.testkit.DengionlineDriver
 import com.wix.pay.model.{CurrencyAmount, Customer, Deal}
 import com.wix.pay.{PaymentErrorException, PaymentGateway, PaymentRejectedException}
@@ -54,35 +54,12 @@ class DengionlineGatewayIT extends SpecWithJUnit {
       ipAddress = Some("2.2.2.2")
     )
 
-    def aForbiddenResponse = Response(
-      code = Errors.forbidden.code,
-      message = Errors.forbidden.message
-    )
-
     val someAuthorization = DengionlineAuthorization(
       transactionId = "some transaction ID"
     )
     val authorizationKey = authorizationParser.stringify(someAuthorization)
 
     val someCaptureAmount = 11.1
-
-    def aSuccessfulResponse = Response(
-      code = Errors.success.code,
-      message = Errors.success.message,
-      transaction_id = Some(someAuthorization.transactionId)
-    )
-
-    def aDeclinedResponse = Response(
-      code = Errors.decline.code,
-      message = Errors.decline.message,
-      transaction_id = Some(someAuthorization.transactionId)
-    )
-
-    def a3dsRequiredResponse = Response(
-      code = Errors.awaitingExternalConfirmation.code,
-      message = Errors.awaitingExternalConfirmation.message,
-      transaction_id = Some(someAuthorization.transactionId)
-    )
 
     val dengionline: PaymentGateway = new DengionlineGateway(
       requestFactory = requestFactory,
@@ -103,7 +80,7 @@ class DengionlineGatewayIT extends SpecWithJUnit {
         currencyAmount = someCurrencyAmount,
         deal = someDeal,
         customer = someCustomer
-      ) returns aForbiddenResponse
+      ) isForbidden()
 
       dengionline.sale(
         merchantKey = merchantKey,
@@ -112,7 +89,7 @@ class DengionlineGatewayIT extends SpecWithJUnit {
         customer = Some(someCustomer),
         deal = Some(someDeal)
       ) must beAFailedTry.like {
-        case e: PaymentErrorException => e.message must contain(aForbiddenResponse.code.toString) and contain(aForbiddenResponse.message)
+        case e: PaymentErrorException => e.message must contain(Errors.forbidden.code.toString) and contain(Errors.forbidden.message)
       }
     }
 
@@ -124,7 +101,7 @@ class DengionlineGatewayIT extends SpecWithJUnit {
         currencyAmount = someCurrencyAmount,
         deal = someDeal,
         customer = someCustomer
-      ) returns aSuccessfulResponse
+      ) returns someAuthorization.transactionId
 
       dengionline.sale(
         merchantKey = merchantKey,
@@ -145,7 +122,7 @@ class DengionlineGatewayIT extends SpecWithJUnit {
         currencyAmount = someCurrencyAmount,
         deal = someDeal,
         customer = someCustomer
-      ) returns aDeclinedResponse
+      ) isDeclined(someAuthorization.transactionId)
 
       dengionline.sale(
         merchantKey = merchantKey,
@@ -154,7 +131,7 @@ class DengionlineGatewayIT extends SpecWithJUnit {
         customer = Some(someCustomer),
         deal = Some(someDeal)
       ) must beAFailedTry.like {
-        case e: PaymentRejectedException => e.message must contain(aDeclinedResponse.code.toString) and contain(aDeclinedResponse.message)
+        case e: PaymentRejectedException => e.message must contain(Errors.decline.code.toString) and contain(Errors.decline.message)
       }
     }
 
@@ -166,7 +143,7 @@ class DengionlineGatewayIT extends SpecWithJUnit {
         currencyAmount = someCurrencyAmount,
         deal = someDeal,
         customer = someCustomer
-      ) returns a3dsRequiredResponse
+      ) requires3ds(someAuthorization.transactionId)
 
       dengionline.sale(
         merchantKey = merchantKey,
@@ -175,7 +152,7 @@ class DengionlineGatewayIT extends SpecWithJUnit {
         customer = Some(someCustomer),
         deal = Some(someDeal)
       ) must beAFailedTry.like {
-        case e: PaymentRejectedException => e.message must contain(a3dsRequiredResponse.code.toString) and contain(a3dsRequiredResponse.message)
+        case e: PaymentRejectedException => e.message must contain(Errors.awaitingExternalConfirmation.code.toString) and contain(Errors.awaitingExternalConfirmation.message)
       }
     }
   }
@@ -189,7 +166,7 @@ class DengionlineGatewayIT extends SpecWithJUnit {
         currencyAmount = someCurrencyAmount,
         deal = someDeal,
         customer = someCustomer
-      ) returns aForbiddenResponse
+      ) isForbidden()
 
       dengionline.authorize(
         merchantKey = merchantKey,
@@ -198,7 +175,7 @@ class DengionlineGatewayIT extends SpecWithJUnit {
         customer = Some(someCustomer),
         deal = Some(someDeal)
       ) must beAFailedTry.like {
-        case e: PaymentErrorException => e.message must contain(aForbiddenResponse.code.toString) and contain(aForbiddenResponse.message)
+        case e: PaymentErrorException => e.message must contain(Errors.forbidden.code.toString) and contain(Errors.forbidden.message)
       }
     }
 
@@ -210,7 +187,7 @@ class DengionlineGatewayIT extends SpecWithJUnit {
         currencyAmount = someCurrencyAmount,
         deal = someDeal,
         customer = someCustomer
-      ) returns aSuccessfulResponse
+      ) returns someAuthorization.transactionId
 
       dengionline.authorize(
         merchantKey = merchantKey,
@@ -235,7 +212,7 @@ class DengionlineGatewayIT extends SpecWithJUnit {
         currencyAmount = someCurrencyAmount,
         deal = someDeal,
         customer = someCustomer
-      ) returns aDeclinedResponse
+      ) isDeclined(someAuthorization.transactionId)
 
       dengionline.authorize(
         merchantKey = merchantKey,
@@ -244,7 +221,7 @@ class DengionlineGatewayIT extends SpecWithJUnit {
         customer = Some(someCustomer),
         deal = Some(someDeal)
       ) must beAFailedTry.like {
-        case e: PaymentRejectedException => e.message must contain(aDeclinedResponse.code.toString) and contain(aDeclinedResponse.message)
+        case e: PaymentRejectedException => e.message must contain(Errors.decline.code.toString) and contain(Errors.decline.message)
       }
     }
 
@@ -256,7 +233,7 @@ class DengionlineGatewayIT extends SpecWithJUnit {
         currencyAmount = someCurrencyAmount,
         deal = someDeal,
         customer = someCustomer
-      ) returns a3dsRequiredResponse
+      ) requires3ds(someAuthorization.transactionId)
 
       dengionline.authorize(
         merchantKey = merchantKey,
@@ -265,7 +242,7 @@ class DengionlineGatewayIT extends SpecWithJUnit {
         customer = Some(someCustomer),
         deal = Some(someDeal)
       ) must beAFailedTry.like {
-        case e: PaymentRejectedException => e.message must contain(a3dsRequiredResponse.code.toString) and contain(a3dsRequiredResponse.message)
+        case e: PaymentRejectedException => e.message must contain(Errors.awaitingExternalConfirmation.code.toString) and contain(Errors.awaitingExternalConfirmation.message)
       }
     }
   }
@@ -277,7 +254,7 @@ class DengionlineGatewayIT extends SpecWithJUnit {
         salt = someMerchant.salt,
         amount = someCaptureAmount,
         transactionId = someAuthorization.transactionId
-      ) returns aSuccessfulResponse
+      ) returns someAuthorization.transactionId
 
       dengionline.capture(
         merchantKey = merchantKey,
@@ -295,7 +272,7 @@ class DengionlineGatewayIT extends SpecWithJUnit {
         siteId = someMerchant.siteId,
         salt = someMerchant.salt,
         transactionId = someAuthorization.transactionId
-      ) returns aSuccessfulResponse
+      ) returns someAuthorization.transactionId
 
       dengionline.voidAuthorization(
         merchantKey = merchantKey,

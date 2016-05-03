@@ -5,7 +5,7 @@ import java.util.{List => JList}
 import com.google.api.client.http.UrlEncodedParser
 import com.wix.hoopoe.http.testkit.EmbeddedHttpProbe
 import com.wix.pay.creditcard.CreditCard
-import com.wix.pay.dengionline.model.Response
+import com.wix.pay.dengionline.model.{Errors, Response}
 import com.wix.pay.dengionline.{DengionlineHelper, ResponseParser}
 import com.wix.pay.model.{CurrencyAmount, Customer, Deal}
 import spray.http._
@@ -98,7 +98,38 @@ class DengionlineDriver(port: Int) {
   }
 
   class RequestCtx(params: Map[String, String]) {
-    def returns(response: Response) {
+    def returns(transactionId: String): Unit = {
+      returns(Response(
+        code = Errors.success.code,
+        message = Errors.success.message,
+        transaction_id = Some(transactionId)
+      ))
+    }
+
+    def isForbidden(): Unit = {
+      returns(Response(
+        code = Errors.forbidden.code,
+        message = Errors.forbidden.message
+      ))
+    }
+
+    def isDeclined(transactionId: String): Unit = {
+      returns(Response(
+        code = Errors.decline.code,
+        message = Errors.decline.message,
+        transaction_id = Some(transactionId)
+      ))
+    }
+
+    def requires3ds(transactionId: String): Unit = {
+      returns(Response(
+        code = Errors.awaitingExternalConfirmation.code,
+        message = Errors.awaitingExternalConfirmation.message,
+        transaction_id = Some(transactionId)
+      ))
+    }
+
+    def returns(response: Response): Unit = {
       probe.handlers += {
         case HttpRequest(
         HttpMethods.POST,
