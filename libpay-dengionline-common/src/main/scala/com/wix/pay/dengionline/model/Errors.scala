@@ -80,11 +80,12 @@ object Errors {
   val invalidDate = Error(137, "Invalid date.")
   /** Incorrect value of parameter 'customer_ip'. */
   val invalidCustomerIp = Error(138, "Invalid customer ip.")
+  val impossibleToPayForSite = Error(139, "Impossible to pay for site")
   /** An incorrect response format of the external system. */
   val malformedAcquirerResponse = Error(144, "Malformed acquirer response")
 
   /** Transaction was declined by the issuing bank. Clarifications should be received in the bank of a customer.  */
-  val declineGenenral = Error(100, "Decline (general, no comments)")
+  val declineGenenral = Error(100, "Decline.")
   /**
    * Fault on the side of the bank. Service is not available. Need to try again. When repeated - contact the bank through
    * which the transfer is carried out, or the customer's bank.
