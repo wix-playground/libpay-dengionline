@@ -128,8 +128,8 @@ class DengionlineGateway(requestFactory: HttpRequestFactory,
   private def extractTransactionId(response: Response): String = {
     Error(code = response.code, message = response.message) match {
       case Errors.success => response.transaction_id.get
-      case DeclineError(declineError) => throw new PaymentRejectedException(declineError.toString)
-      case error => throw new PaymentErrorException(error.toString)
+      case DeclineError(declineError) => throw PaymentRejectedException(declineError.toString)
+      case error => throw PaymentErrorException(error.toString)
     }
   }
 
