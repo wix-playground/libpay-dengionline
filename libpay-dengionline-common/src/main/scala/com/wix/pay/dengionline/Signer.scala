@@ -1,8 +1,7 @@
 package com.wix.pay.dengionline
 
-import java.security.MessageDigest
-
 import com.wix.pay.dengionline.model.Fields
+import org.apache.commons.codec.digest.DigestUtils
 
 /**
  * From the document (sic.):
@@ -24,7 +23,6 @@ import com.wix.pay.dengionline.model.Fields
  * 10. To avoid double signing parameters with names "sign" and "signature" are always excluded from the signature.
  */
 object Signer {
-  private val sha1 = MessageDigest.getInstance("SHA-1")
   private val ignoredFields = Set(Fields.sign, Fields.signature)
 
   def calculateSignature(params: Map[String, String], salt: String): String = {
@@ -40,12 +38,6 @@ object Signer {
 
     val stringForSignature = s"$paramsStr;$salt"
 
-    calculateSha1(stringForSignature)
-  }
-
-  private def calculateSha1(str: String): String = {
-    val data = str.getBytes("UTF-8")
-    val hash = sha1.digest(data)
-    hash.map("%02x" format _).mkString
+    DigestUtils.sha1Hex(stringForSignature)
   }
 }
