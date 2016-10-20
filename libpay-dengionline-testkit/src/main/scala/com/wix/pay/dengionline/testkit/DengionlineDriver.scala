@@ -13,9 +13,9 @@ import spray.http._
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 
-class DengionlineDriver(port: Int) {
+class DengionlineDriver(port: Int,
+                        defaultEmail: String = "example@example.org") {
   private val probe = new EmbeddedHttpProbe(port, EmbeddedHttpProbe.NotFoundHandler)
-  private val responseParser = new ResponseParser
 
   def startProbe() {
     probe.doStart()
@@ -42,7 +42,7 @@ class DengionlineDriver(port: Int) {
       card = card,
       dealId = deal.id,
       customerIpAddress = customer.ipAddress,
-      customerEmail = customer.email
+      customerEmail = customer.email.getOrElse(defaultEmail)
     )
 
     new RequestCtx(request)
@@ -61,7 +61,7 @@ class DengionlineDriver(port: Int) {
       card = card,
       dealId = deal.id,
       customerIpAddress = customer.ipAddress,
-      customerEmail = customer.email
+      customerEmail = customer.email.getOrElse(defaultEmail)
     )
 
     new RequestCtx(request)
@@ -139,7 +139,7 @@ class DengionlineDriver(port: Int) {
         _) if isStubbedRequestEntity(entity) =>
           HttpResponse(
             status = StatusCodes.OK,
-            entity = HttpEntity(ContentType(MediaTypes.`application/json`), responseParser.stringify(response)))
+            entity = HttpEntity(ContentType(MediaTypes.`application/json`), ResponseParser.stringify(response)))
       }
     }
 

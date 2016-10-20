@@ -20,10 +20,9 @@ class DengionlineGateway(requestFactory: HttpRequestFactory,
                          readTimeout: Option[Duration] = None,
                          numberOfRetries: Int = 0,
                          endpointUrl: String = Endpoints.production,
+                         defaultEmail: String = "example@example.org",
                          merchantParser: DengionlineMerchantParser = new JsonDengionlineMerchantParser,
                          authorizationParser: DengionlineAuthorizationParser = new JsonDengionlineAuthorizationParser) extends PaymentGateway {
-  private val responseParser = new ResponseParser
-
   override def authorize(merchantKey: String, creditCard: CreditCard, currencyAmount: CurrencyAmount, customer: Option[Customer], deal: Option[Deal]): Try[String] = {
     Try {
       require(creditCard.csc.isDefined, "CSC is mandatory for DengiOnline")
@@ -38,11 +37,11 @@ class DengionlineGateway(requestFactory: HttpRequestFactory,
         currencyAmount = currencyAmount,
         card = creditCard,
         dealId = deal.get.id,
-        customerEmail = if (customer.isDefined) customer.get.email else None,
+        customerEmail = customer.flatMap { _.email }.getOrElse(defaultEmail),
         customerIpAddress = if (customer.isDefined) customer.get.ipAddress else None
       )
       val responseJson = doRequest(request)
-      val response = responseParser.parse(responseJson)
+      val response = ResponseParser.parse(responseJson)
 
       authorizationParser.stringify(DengionlineAuthorization(
         transactionId = extractTransactionId(response)
@@ -66,7 +65,7 @@ class DengionlineGateway(requestFactory: HttpRequestFactory,
         transactionId = authorization.transactionId
       )
       val responseJson = doRequest(request)
-      val response = responseParser.parse(responseJson)
+      val response = ResponseParser.parse(responseJson)
 
       extractTransactionId(response)
     } match {
@@ -90,11 +89,11 @@ class DengionlineGateway(requestFactory: HttpRequestFactory,
         currencyAmount = currencyAmount,
         card = creditCard,
         dealId = deal.get.id,
-        customerEmail = if (customer.isDefined) customer.get.email else None,
+        customerEmail = customer.flatMap { _.email }.getOrElse(defaultEmail),
         customerIpAddress = if (customer.isDefined) customer.get.ipAddress else None
       )
       val responseJson = doRequest(request)
-      val response = responseParser.parse(responseJson)
+      val response = ResponseParser.parse(responseJson)
 
       extractTransactionId(response)
     } match {
@@ -115,7 +114,7 @@ class DengionlineGateway(requestFactory: HttpRequestFactory,
         transactionId = authorization.transactionId
       )
       val responseJson = doRequest(request)
-      val response = responseParser.parse(responseJson)
+      val response = ResponseParser.parse(responseJson)
 
       extractTransactionId(response)
     } match {

@@ -13,7 +13,7 @@ object DengionlineHelper {
                             card: CreditCard,
                             dealId: String,
                             customerIpAddress: Option[String] = None,
-                            customerEmail: Option[String] = None): Map[String, String] = {
+                            customerEmail: String): Map[String, String] = {
     createAuthorizationOrPurchaseRequest(
       action = Actions.purchase,
       siteId = siteId,
@@ -32,7 +32,7 @@ object DengionlineHelper {
                                  card: CreditCard,
                                  dealId: String,
                                  customerIpAddress: Option[String] = None,
-                                 customerEmail: Option[String] = None): Map[String, String] = {
+                                 customerEmail: String): Map[String, String] = {
     createAuthorizationOrPurchaseRequest(
       action = Actions.authorization,
       siteId = siteId,
@@ -80,7 +80,7 @@ object DengionlineHelper {
                                                    card: CreditCard,
                                                    dealId: String,
                                                    customerIpAddress: Option[String] = None,
-                                                   customerEmail: Option[String] = None): Map[String, String] = {
+                                                   customerEmail: String): Map[String, String] = {
     val params = Map(
       Fields.action -> action,
       Fields.siteId -> siteId,
@@ -93,7 +93,7 @@ object DengionlineHelper {
       Fields.cardNumber -> card.number,
       Fields.cardHolderName -> card.holderName.get,
       Fields.cardCvv -> card.csc.get,
-      Fields.email -> customerEmail.getOrElse(""),
+      Fields.email -> customerEmail,
       Fields.billingPostal -> card.billingPostalCode.getOrElse(""),
       Fields.billingAddress -> card.billingAddress.getOrElse("")
     )
