@@ -23,18 +23,19 @@ class DengionlineGateway(requestFactory: HttpRequestFactory,
                          defaultEmail: String = "example@example.org",
                          merchantParser: DengionlineMerchantParser = new JsonDengionlineMerchantParser,
                          authorizationParser: DengionlineAuthorizationParser = new JsonDengionlineAuthorizationParser) extends PaymentGateway {
-  override def authorize(merchantKey: String, creditCard: CreditCard, currencyAmount: CurrencyAmount, customer: Option[Customer], deal: Option[Deal]): Try[String] = {
+  override def authorize(merchantKey: String, creditCard: CreditCard, payment: Payment, customer: Option[Customer], deal: Option[Deal]): Try[String] = {
     Try {
       require(creditCard.csc.isDefined, "CSC is mandatory for DengiOnline")
       require(creditCard.holderName.isDefined, "Cardholder name is mandatory for DengiOnline")
       require(deal.isDefined, "Deal is mandatory for DengiOnline")
+      require(payment.installments == 1, "DengiOnline does not support installments")
 
       val merchant = merchantParser.parse(merchantKey)
 
       val request = DengionlineHelper.createAuthorizationRequest(
         siteId = merchant.siteId,
         salt = merchant.salt,
-        currencyAmount = currencyAmount,
+        currencyAmount = payment.currencyAmount,
         card = creditCard,
         dealId = deal.get.id,
         customerEmail = customer.flatMap { _.email }.getOrElse(defaultEmail),
@@ -75,18 +76,19 @@ class DengionlineGateway(requestFactory: HttpRequestFactory,
     }
   }
 
-  override def sale(merchantKey: String, creditCard: CreditCard, currencyAmount: CurrencyAmount, customer: Option[Customer], deal: Option[Deal]): Try[String] = {
+  override def sale(merchantKey: String, creditCard: CreditCard, payment: Payment, customer: Option[Customer], deal: Option[Deal]): Try[String] = {
     Try {
       require(creditCard.csc.isDefined, "CSC is mandatory for DengiOnline")
       require(creditCard.holderName.isDefined, "Cardholder name is mandatory for DengiOnline")
       require(deal.isDefined, "Deal is mandatory for DengiOnline")
+      require(payment.installments == 1, "DengiOnline does not support installments")
 
       val merchant = merchantParser.parse(merchantKey)
 
       val request = DengionlineHelper.createPurchaseRequest(
         siteId = merchant.siteId,
         salt = merchant.salt,
-        currencyAmount = currencyAmount,
+        currencyAmount = payment.currencyAmount,
         card = creditCard,
         dealId = deal.get.id,
         customerEmail = customer.flatMap { _.email }.getOrElse(defaultEmail),

@@ -6,7 +6,7 @@ import com.wix.pay.dengionline.DengionlineMatchers._
 import com.wix.pay.dengionline._
 import com.wix.pay.dengionline.model.Errors
 import com.wix.pay.dengionline.testkit.DengionlineDriver
-import com.wix.pay.model.{CurrencyAmount, Customer, Deal}
+import com.wix.pay.model.{CurrencyAmount, Customer, Deal, Payment}
 import com.wix.pay.{PaymentErrorException, PaymentGateway, PaymentRejectedException}
 import org.specs2.mutable.SpecWithJUnit
 import org.specs2.specification.Scope
@@ -34,6 +34,7 @@ class DengionlineGatewayIT extends SpecWithJUnit {
     val merchantKey = merchantParser.stringify(someMerchant)
 
     val someCurrencyAmount = CurrencyAmount("RUB", 33.3)
+    val somePayment = Payment(someCurrencyAmount, 1)
     val someCreditCard = CreditCard(
       number = "4012888818888",
       expiration = YearMonth(2020, 12),
@@ -85,7 +86,7 @@ class DengionlineGatewayIT extends SpecWithJUnit {
       dengionline.sale(
         merchantKey = merchantKey,
         creditCard = someCreditCard,
-        currencyAmount = someCurrencyAmount,
+        payment = somePayment,
         customer = Some(someCustomer),
         deal = Some(someDeal)
       ) must beAFailedTry.like {
@@ -106,7 +107,7 @@ class DengionlineGatewayIT extends SpecWithJUnit {
       dengionline.sale(
         merchantKey = merchantKey,
         creditCard = someCreditCard,
-        currencyAmount = someCurrencyAmount,
+        payment = somePayment,
         customer = Some(someCustomer),
         deal = Some(someDeal)
       ) must beASuccessfulTry(
@@ -127,7 +128,7 @@ class DengionlineGatewayIT extends SpecWithJUnit {
       dengionline.sale(
         merchantKey = merchantKey,
         creditCard = someCreditCard,
-        currencyAmount = someCurrencyAmount,
+        payment = somePayment,
         customer = Some(someCustomer),
         deal = Some(someDeal)
       ) must beAFailedTry.like {
@@ -148,7 +149,7 @@ class DengionlineGatewayIT extends SpecWithJUnit {
       dengionline.sale(
         merchantKey = merchantKey,
         creditCard = someCreditCard,
-        currencyAmount = someCurrencyAmount,
+        payment = somePayment,
         customer = Some(someCustomer),
         deal = Some(someDeal)
       ) must beAFailedTry.like {
@@ -171,7 +172,7 @@ class DengionlineGatewayIT extends SpecWithJUnit {
       dengionline.authorize(
         merchantKey = merchantKey,
         creditCard = someCreditCard,
-        currencyAmount = someCurrencyAmount,
+        payment = somePayment,
         customer = Some(someCustomer),
         deal = Some(someDeal)
       ) must beAFailedTry.like {
@@ -192,7 +193,7 @@ class DengionlineGatewayIT extends SpecWithJUnit {
       dengionline.authorize(
         merchantKey = merchantKey,
         creditCard = someCreditCard,
-        currencyAmount = someCurrencyAmount,
+        payment = somePayment,
         customer = Some(someCustomer),
         deal = Some(someDeal)
       ) must beASuccessfulTry(
@@ -217,7 +218,7 @@ class DengionlineGatewayIT extends SpecWithJUnit {
       dengionline.authorize(
         merchantKey = merchantKey,
         creditCard = someCreditCard,
-        currencyAmount = someCurrencyAmount,
+        payment = somePayment,
         customer = Some(someCustomer),
         deal = Some(someDeal)
       ) must beAFailedTry.like {
@@ -238,7 +239,7 @@ class DengionlineGatewayIT extends SpecWithJUnit {
       dengionline.authorize(
         merchantKey = merchantKey,
         creditCard = someCreditCard,
-        currencyAmount = someCurrencyAmount,
+        payment = somePayment,
         customer = Some(someCustomer),
         deal = Some(someDeal)
       ) must beAFailedTry.like {
