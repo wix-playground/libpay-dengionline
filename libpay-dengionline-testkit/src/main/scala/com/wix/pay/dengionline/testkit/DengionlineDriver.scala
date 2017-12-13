@@ -1,33 +1,29 @@
 package com.wix.pay.dengionline.testkit
 
-import java.util.{List => JList}
 
+import scala.collection.JavaConversions._
+import scala.collection.mutable
+import java.util.{List => JList}
+import akka.http.scaladsl.model.Uri.Path
+import akka.http.scaladsl.model._
 import com.google.api.client.http.UrlEncodedParser
-import com.wix.hoopoe.http.testkit.EmbeddedHttpProbe
+import com.wix.e2e.http.api.StubWebServer
+import com.wix.e2e.http.client.extractors.HttpMessageExtractors._
+import com.wix.e2e.http.server.WebServerFactory.aStubWebServer
 import com.wix.pay.creditcard.CreditCard
 import com.wix.pay.dengionline.model.{Errors, Response}
 import com.wix.pay.dengionline.{DengionlineHelper, ResponseParser}
 import com.wix.pay.model.{CurrencyAmount, Customer, Deal}
-import spray.http._
 
-import scala.collection.JavaConversions._
-import scala.collection.mutable
 
 class DengionlineDriver(port: Int,
                         defaultEmail: String = "example@example.org") {
-  private val probe = new EmbeddedHttpProbe(port, EmbeddedHttpProbe.NotFoundHandler)
+  private val server: StubWebServer = aStubWebServer.onPort(port).build
 
-  def startProbe() {
-    probe.doStart()
-  }
+  def start(): Unit = server.start()
+  def stop(): Unit = server.stop()
+  def reset(): Unit = server.replaceWith()
 
-  def stopProbe() {
-    probe.doStop()
-  }
-
-  def resetProbe() {
-    probe.handlers.clear()
-  }
 
   def aSaleFor(siteId: String,
                salt: String,
@@ -42,8 +38,7 @@ class DengionlineDriver(port: Int,
       card = card,
       dealId = deal.id,
       customerIpAddress = customer.ipAddress,
-      customerEmail = customer.email.getOrElse(defaultEmail)
-    )
+      customerEmail = customer.email.getOrElse(defaultEmail))
 
     new RequestCtx(request)
   }
@@ -61,8 +56,7 @@ class DengionlineDriver(port: Int,
       card = card,
       dealId = deal.id,
       customerIpAddress = customer.ipAddress,
-      customerEmail = customer.email.getOrElse(defaultEmail)
-    )
+      customerEmail = customer.email.getOrElse(defaultEmail))
 
     new RequestCtx(request)
   }
@@ -75,8 +69,7 @@ class DengionlineDriver(port: Int,
       siteId = siteId,
       salt = salt,
       amount = amount,
-      transactionId = transactionId
-    )
+      transactionId = transactionId)
 
     new RequestCtx(request)
   }
@@ -87,8 +80,7 @@ class DengionlineDriver(port: Int,
     val request = DengionlineHelper.createVoidRequest(
       siteId = siteId,
       salt = salt,
-      transactionId = transactionId
-    )
+      transactionId = transactionId)
 
     new RequestCtx(request)
   }
@@ -97,54 +89,51 @@ class DengionlineDriver(port: Int,
     new RequestCtx(params)
   }
 
+
   class RequestCtx(params: Map[String, String]) {
     def returns(transactionId: String): Unit = {
       returns(Response(
         code = Errors.success.code,
         message = Errors.success.message,
-        transaction_id = Some(transactionId)
-      ))
+        transaction_id = Some(transactionId)))
     }
 
-    def isForbidden(): Unit = {
+    def getsForbidden(): Unit = {
       returns(Response(
         code = Errors.forbidden.code,
-        message = Errors.forbidden.message
-      ))
+        message = Errors.forbidden.message))
     }
 
-    def isDeclined(transactionId: String): Unit = {
+    def getsDeclined(transactionId: String): Unit = {
       returns(Response(
         code = Errors.decline.code,
         message = Errors.decline.message,
-        transaction_id = Some(transactionId)
-      ))
+        transaction_id = Some(transactionId)))
     }
 
     def requires3ds(transactionId: String): Unit = {
       returns(Response(
         code = Errors.awaitingExternalConfirmation.code,
         message = Errors.awaitingExternalConfirmation.message,
-        transaction_id = Some(transactionId)
-      ))
+        transaction_id = Some(transactionId)))
     }
 
     def returns(response: Response): Unit = {
-      probe.handlers += {
+      server.appendAll {
         case HttpRequest(
-        HttpMethods.POST,
-        Uri.Path("/"),
-        _,
-        entity,
-        _) if isStubbedRequestEntity(entity) =>
-          HttpResponse(
-            status = StatusCodes.OK,
-            entity = HttpEntity(ContentType(MediaTypes.`application/json`), ResponseParser.stringify(response)))
+          HttpMethods.POST,
+          Path("/"),
+          _,
+          entity,
+          _) if isStubbedRequestEntity(entity) =>
+            HttpResponse(
+              status = StatusCodes.OK,
+              entity = HttpEntity(ContentType(MediaTypes.`application/json`), ResponseParser.stringify(response)))
       }
     }
 
     private def isStubbedRequestEntity(entity: HttpEntity): Boolean = {
-      val requestParams = urlDecode(entity.asString)
+      val requestParams = urlDecode(entity.extractAsString)
       params == requestParams
     }
 
